@@ -188,7 +188,7 @@ function formatDate(iso: string): string {
 }
 
 function formatWeight(weight: number): string {
-  return Number.isInteger(weight) ? String(weight) : String(Math.round(weight * 10) / 10);
+  return Number.isInteger(weight) ? String(weight) : String(Math.round(weight * 100) / 100);
 }
 
 /** "5 / 5 / 4" — reps per set, with "–" for sets never attempted. */

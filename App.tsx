@@ -104,17 +104,15 @@ function Root() {
   }, [activeSession, hydrated]);
 
   const finishWorkout = useCallback(() => {
-    setActiveSession(current => {
-      if (!current) return null;
-      const completed: WorkoutSession = {
-        ...current,
-        date: new Date().toISOString(),
-      };
-      setSessions(prev => [completed, ...prev]);
-      return null;
-    });
+    if (!activeSession) return;
+    const completed: WorkoutSession = {
+      ...activeSession,
+      date: new Date().toISOString(),
+    };
+    setSessions(prev => [completed, ...prev]);
+    setActiveSession(null);
     setTab('history');
-  }, []);
+  }, [activeSession]);
 
   const discardWorkout = useCallback(() => {
     setActiveSession(null);

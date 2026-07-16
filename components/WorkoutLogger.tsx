@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -66,9 +66,9 @@ function makeId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** "225" or "62.5" — no trailing ".0". */
+/** "225" or "62.5" — no trailing ".0"; matches the 2-decimal commit precision. */
 export function formatWeight(weight: number): string {
-  return Number.isInteger(weight) ? String(weight) : String(Math.round(weight * 10) / 10);
+  return Number.isInteger(weight) ? String(weight) : String(Math.round(weight * 100) / 100);
 }
 
 function roundToStep(weight: number, step: number): number {
@@ -289,9 +289,10 @@ function ActiveWorkout({ session, onChangeSession, onFinish, onDiscard }: Active
 
   /**
    * Set circle state machine:
-   *   tap 1 (pending)      -> full success at target reps (emerald + check)
-   *   tap 2 (full success) -> open inline rep picker to log a partial set
-   *   tap 3 (partial)      -> reset to pending
+   *   tap 1 (pending)               -> full success at target reps (emerald + check)
+   *   tap 2 (full success)          -> open inline rep picker to log a partial set
+   *   tap 3 (picker open / partial) -> reset to pending
+   * The picker's X closes it without touching the logged reps.
    */
   const handleSetPress = (exerciseIndex: number, setIndex: number) => {
     const exercise = session.exercises[exerciseIndex];
@@ -302,8 +303,8 @@ function ActiveWorkout({ session, onChangeSession, onFinish, onDiscard }: Active
     if (current === null) {
       setSetReps(exerciseIndex, setIndex, exercise.targetReps);
       setEditing(null);
-    } else if (current === exercise.targetReps) {
-      setEditing(isEditingThis ? null : { exerciseIndex, setIndex });
+    } else if (current === exercise.targetReps && !isEditingThis) {
+      setEditing({ exerciseIndex, setIndex });
     } else {
       setSetReps(exerciseIndex, setIndex, null);
       setEditing(null);
@@ -559,30 +560,39 @@ interface WeightControlProps {
 
 /** Big +/- steppers around a numeric input, so the keyboard is rarely needed. */
 function WeightControl({ weight, unit, onChangeWeight }: WeightControlProps) {
+  const inputRef = useRef<TextInput>(null);
   const [draft, setDraft] = useState(() => formatWeight(weight));
   const [focused, setFocused] = useState(false);
   const step = WEIGHT_STEP[unit];
 
-  // Reflect external changes (+/- taps) while the field isn't being typed in.
+  // Mirror external weight changes (stepper taps, post-blur normalization)
+  // into the display whenever the user isn't actively typing.
   useEffect(() => {
     if (!focused) setDraft(formatWeight(weight));
   }, [weight, focused]);
 
-  const commitDraft = () => {
-    setFocused(false);
-    const parsed = parseFloat(draft.replace(',', '.'));
+  // Commit on every keystroke so session state always holds the latest typed
+  // weight — even if the workout is finished without dismissing the keyboard.
+  const handleChangeText = (text: string) => {
+    setDraft(text);
+    const parsed = parseFloat(text.replace(',', '.'));
     if (Number.isFinite(parsed) && parsed >= 0) {
       onChangeWeight(Math.round(parsed * 100) / 100);
-    } else {
-      setDraft(formatWeight(weight));
     }
+  };
+
+  // Stepper taps take over from typing: blur first so the keyboard closes and
+  // the synced display (not a stale draft) is what the user sees from then on.
+  const applyStep = (delta: number) => {
+    inputRef.current?.blur();
+    onChangeWeight(Math.max(0, Math.round((weight + delta) * 100) / 100));
   };
 
   return (
     <View style={styles.weightRow}>
       <TouchableOpacity
         style={[styles.stepButton, weight <= 0 && styles.stepButtonDisabled]}
-        onPress={() => onChangeWeight(Math.max(0, weight - step))}
+        onPress={() => applyStep(-step)}
         disabled={weight <= 0}
         accessibilityRole="button"
         accessibilityLabel={`Decrease weight by ${formatWeight(step)} ${unit}`}
@@ -592,11 +602,12 @@ function WeightControl({ weight, unit, onChangeWeight }: WeightControlProps) {
 
       <View style={styles.weightCenter}>
         <TextInput
+          ref={inputRef}
           style={styles.weightInput}
           value={draft}
-          onChangeText={setDraft}
+          onChangeText={handleChangeText}
           onFocus={() => setFocused(true)}
-          onEndEditing={commitDraft}
+          onBlur={() => setFocused(false)}
           keyboardType="decimal-pad"
           returnKeyType="done"
           maxLength={6}
@@ -608,7 +619,7 @@ function WeightControl({ weight, unit, onChangeWeight }: WeightControlProps) {
 
       <TouchableOpacity
         style={styles.stepButton}
-        onPress={() => onChangeWeight(Math.round((weight + step) * 100) / 100)}
+        onPress={() => applyStep(step)}
         accessibilityRole="button"
         accessibilityLabel={`Increase weight by ${formatWeight(step)} ${unit}`}
       >
