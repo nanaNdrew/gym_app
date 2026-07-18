@@ -63,6 +63,7 @@ function Root() {
   const insets = useSafeAreaInsets();
   const [hydrated, setHydrated] = useState(false);
   const [tab, setTab] = useState<Tab>('log');
+  const [manualDate, setManualDate] = useState<string | null>(null);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   // The in-progress workout. Persisted separately so a killed app (or dead
   // battery) mid-session never loses logged sets.
@@ -107,15 +108,16 @@ function Root() {
     if (!activeSession) return;
     const completed: WorkoutSession = {
       ...activeSession,
-      date: new Date().toISOString(),
     };
     setSessions(prev => [completed, ...prev]);
     setActiveSession(null);
+    setManualDate(null);
     setTab('history');
   }, [activeSession]);
 
   const discardWorkout = useCallback(() => {
     setActiveSession(null);
+    setManualDate(null);
   }, []);
 
   const deleteSession = useCallback((id: string) => {
@@ -140,9 +142,18 @@ function Root() {
             onChangeSession={setActiveSession}
             onFinish={finishWorkout}
             onDiscard={discardWorkout}
+            manualDate={manualDate}
+            onClearManualDate={() => setManualDate(null)}
           />
         ) : (
-          <HistoryView sessions={sessions} onDeleteSession={deleteSession} />
+          <HistoryView 
+            sessions={sessions} 
+            onDeleteSession={deleteSession} 
+            onLogManualWorkout={(date: string) => {
+              setManualDate(date);
+              setTab('log');
+            }}
+          />
         )}
       </View>
 
@@ -151,7 +162,10 @@ function Root() {
           label="Log Workout"
           icon={Dumbbell}
           active={tab === 'log'}
-          onPress={() => setTab('log')}
+          onPress={() => {
+            setManualDate(null);
+            setTab('log');
+          }}
         />
         <TabButton
           label="History"

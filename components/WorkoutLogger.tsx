@@ -142,6 +142,8 @@ interface WorkoutLoggerProps {
   onChangeSession: (session: WorkoutSession | null) => void;
   onFinish: () => void;
   onDiscard: () => void;
+  manualDate?: string | null;
+  onClearManualDate?: () => void;
 }
 
 export default function WorkoutLogger({
@@ -150,12 +152,16 @@ export default function WorkoutLogger({
   onChangeSession,
   onFinish,
   onDiscard,
+  manualDate,
+  onClearManualDate,
 }: WorkoutLoggerProps) {
   if (!activeSession) {
     return (
       <TemplatePicker
         sessions={sessions}
         onStart={session => onChangeSession(session)}
+        manualDate={manualDate}
+        onClearManualDate={onClearManualDate}
       />
     );
   }
@@ -176,9 +182,11 @@ export default function WorkoutLogger({
 interface TemplatePickerProps {
   sessions: WorkoutSession[];
   onStart: (session: WorkoutSession) => void;
+  manualDate?: string | null;
+  onClearManualDate?: () => void;
 }
 
-function TemplatePicker({ sessions, onStart }: TemplatePickerProps) {
+function TemplatePicker({ sessions, onStart, manualDate, onClearManualDate }: TemplatePickerProps) {
   const [unit, setUnit] = useState<WeightUnit>(
     () => sessions[0]?.exercises[0]?.unit ?? 'lbs',
   );
@@ -189,9 +197,12 @@ function TemplatePicker({ sessions, onStart }: TemplatePickerProps) {
   );
 
   const startWorkout = (template: WorkoutTemplate, seeded: SeededExercise[]) => {
+    const dateString = manualDate 
+      ? new Date(`${manualDate}T12:00:00Z`).toISOString() 
+      : new Date().toISOString();
     onStart({
       id: makeId(),
-      date: new Date().toISOString(),
+      date: dateString,
       templateLabel: template.label,
       exercises: seeded.map(s => s.exercise),
       recovery: { restingHeartRate: null, soreness: null, sleepQuality: null },
@@ -200,6 +211,15 @@ function TemplatePicker({ sessions, onStart }: TemplatePickerProps) {
 
   return (
     <ScrollView style={styles.flex} contentContainerStyle={styles.pickerContainer}>
+      {manualDate && (
+        <View style={styles.manualDateBanner}>
+          <Text style={styles.manualDateText}>Logging for {manualDate}</Text>
+          <TouchableOpacity onPress={onClearManualDate}>
+            <X size={18} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+      )}
+
       <Text style={styles.screenTitle}>Start a Workout</Text>
       <Text style={styles.screenSubtitle}>
         Pick a template — weights auto-progress {`+${formatWeight(WEIGHT_STEP[unit])} ${unit}`} from

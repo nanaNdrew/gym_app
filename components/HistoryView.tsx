@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 import { Dumbbell, Flame, HeartPulse, Moon, Trash2 } from 'lucide-react-native';
 
 import { LoggedExercise, WorkoutSession } from '../types';
@@ -15,14 +16,30 @@ import { colors, radius, spacing, TOUCH_TARGET } from '../theme';
 interface HistoryViewProps {
   sessions: WorkoutSession[];
   onDeleteSession: (id: string) => void;
+  onLogManualWorkout?: (date: string) => void;
 }
 
-export default function HistoryView({ sessions, onDeleteSession }: HistoryViewProps) {
+export default function HistoryView({ sessions, onDeleteSession, onLogManualWorkout }: HistoryViewProps) {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
   // Reverse-chronological, regardless of insertion order.
   const sorted = useMemo(
     () => [...sessions].sort((a, b) => Date.parse(b.date) - Date.parse(a.date)),
     [sessions],
   );
+
+  const markedDates = useMemo(() => {
+    const marks: Record<string, any> = {};
+    sessions.forEach(session => {
+      if (!session.date) return;
+      const dateString = session.date.split('T')[0];
+      marks[dateString] = { marked: true, dotColor: colors.emerald };
+    });
+    if (selectedDate) {
+      marks[selectedDate] = { ...marks[selectedDate], selected: true, selectedColor: colors.emerald };
+    }
+    return marks;
+  }, [sessions, selectedDate]);
 
   return (
     <View style={styles.container}>
@@ -42,6 +59,41 @@ export default function HistoryView({ sessions, onDeleteSession }: HistoryViewPr
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={Separator}
         ListEmptyComponent={EmptyState}
+        ListHeaderComponent={
+          <View style={{ marginBottom: spacing.lg }}>
+            <View style={{ borderRadius: radius.lg, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
+              <Calendar
+                theme={{
+                  backgroundColor: colors.surface,
+                  calendarBackground: colors.surface,
+                  textSectionTitleColor: colors.textMuted,
+                  selectedDayBackgroundColor: colors.emerald,
+                  selectedDayTextColor: '#ffffff',
+                  todayTextColor: colors.emerald,
+                  dayTextColor: colors.text,
+                  textDisabledColor: colors.border,
+                  dotColor: colors.emerald,
+                  selectedDotColor: '#ffffff',
+                  arrowColor: colors.emerald,
+                  monthTextColor: colors.text,
+                  indicatorColor: colors.emerald,
+                }}
+                markedDates={markedDates}
+                onDayPress={(day: any) => setSelectedDate(day.dateString)}
+              />
+            </View>
+            {selectedDate && (
+              <TouchableOpacity 
+                style={[styles.card, { marginTop: spacing.md, alignItems: 'center', borderColor: colors.emerald, borderWidth: 1 }]}
+                onPress={() => onLogManualWorkout?.(selectedDate)}
+              >
+                <Text style={{ color: colors.emerald, fontWeight: '700', fontSize: 16 }}>
+                  + Log workout for {selectedDate}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        }
         renderItem={({ item }) => (
           <SessionCard session={item} onDelete={() => confirmDelete(item, onDeleteSession)} />
         )}
