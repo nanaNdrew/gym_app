@@ -60,6 +60,14 @@ export const TEMPLATES: WorkoutTemplate[] = [
       { name: 'Power Clean', targetSets: 5, targetReps: 3, startingWeight: { lbs: 65, kg: 30 } },
     ],
   },
+  {
+    label: 'Workout C',
+    exercises: [
+      { name: 'Squat', targetSets: 3, targetReps: 5, startingWeight: { lbs: 45, kg: 20 } },
+      { name: 'Overhead Press', targetSets: 3, targetReps: 5, startingWeight: { lbs: 45, kg: 20 } },
+      { name: 'Deadlift', targetSets: 1, targetReps: 5, startingWeight: { lbs: 95, kg: 40 } },
+    ],
+  },
 ];
 
 function makeId(): string {
@@ -191,7 +199,7 @@ function TemplatePicker({ sessions, onStart }: TemplatePickerProps) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.pickerContainer}>
+    <ScrollView style={styles.flex} contentContainerStyle={styles.pickerContainer}>
       <Text style={styles.screenTitle}>Start a Workout</Text>
       <Text style={styles.screenSubtitle}>
         Pick a template — weights auto-progress {`+${formatWeight(WEIGHT_STEP[unit])} ${unit}`} from
@@ -358,6 +366,7 @@ function ActiveWorkout({ session, onChangeSession, onFinish, onDiscard }: Active
       </View>
 
       <ScrollView
+        style={styles.flex}
         contentContainerStyle={styles.workoutContainer}
         keyboardShouldPersistTaps="handled"
       >

@@ -9,7 +9,7 @@ export type WeightUnit = 'lbs' | 'kg';
 export type Rating = 1 | 2 | 3 | 4 | 5;
 
 /** Quick-start template identifiers. */
-export type TemplateLabel = 'Workout A' | 'Workout B';
+export type TemplateLabel = 'Workout A' | 'Workout B' | 'Workout C';
 
 /**
  * Pre-workout biomarker snapshot. Every field is nullable so the user can

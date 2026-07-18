@@ -36,6 +36,7 @@ export default function HistoryView({ sessions, onDeleteSession }: HistoryViewPr
       </View>
 
       <FlatList
+        style={{ flex: 1 }}
         data={sorted}
         keyExtractor={session => session.id}
         contentContainerStyle={styles.listContent}
