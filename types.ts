@@ -43,8 +43,12 @@ export interface LoggedExercise {
 /** A single (possibly in-progress) workout session. */
 export interface WorkoutSession {
   id: string;
-  /** ISO-8601 timestamp; stamped when the session is saved. */
+  /** ISO-8601 timestamp; represents the logical date of the workout (can be manually overridden). */
   date: string;
+  /** ISO-8601 timestamp; when the workout actually began. */
+  startTime?: string;
+  /** ISO-8601 timestamp; when the workout was completed. */
+  endTime?: string;
   templateLabel: TemplateLabel;
   exercises: LoggedExercise[];
   recovery: RecoveryMetrics;

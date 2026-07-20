@@ -19,6 +19,7 @@ import { WorkoutSession } from './types';
 import { colors, spacing, TOUCH_TARGET } from './theme';
 import WorkoutLogger from './components/WorkoutLogger';
 import HistoryView from './components/HistoryView';
+import { saveWorkoutToHealthKit } from './utils/healthkit';
 
 // ---------------------------------------------------------------------------
 // AsyncStorage persistence
@@ -108,11 +109,16 @@ function Root() {
     if (!activeSession) return;
     const completed: WorkoutSession = {
       ...activeSession,
+      endTime: activeSession.startTime ? new Date().toISOString() : undefined,
     };
     setSessions(prev => [completed, ...prev]);
     setActiveSession(null);
     setManualDate(null);
     setTab('history');
+
+    saveWorkoutToHealthKit(completed).catch(e => {
+      console.log('HealthKit sync failed:', e);
+    });
   }, [activeSession]);
 
   const discardWorkout = useCallback(() => {

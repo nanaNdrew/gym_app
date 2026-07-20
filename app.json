@@ -6,6 +6,15 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "react-native-health",
+        {
+          "NSHealthShareUsageDescription": "Gym App needs access to read your health data to track your progress.",
+          "NSHealthUpdateUsageDescription": "Gym App needs access to write your completed workouts to Apple Health and the Fitness app."
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.gym-app"

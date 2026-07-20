@@ -197,12 +197,14 @@ function TemplatePicker({ sessions, onStart, manualDate, onClearManualDate }: Te
   );
 
   const startWorkout = (template: WorkoutTemplate, seeded: SeededExercise[]) => {
+    const isManual = !!manualDate;
     const dateString = manualDate 
       ? new Date(`${manualDate}T12:00:00Z`).toISOString() 
       : new Date().toISOString();
     onStart({
       id: makeId(),
       date: dateString,
+      startTime: isManual ? undefined : new Date().toISOString(),
       templateLabel: template.label,
       exercises: seeded.map(s => s.exercise),
       recovery: { restingHeartRate: null, soreness: null, sleepQuality: null },
